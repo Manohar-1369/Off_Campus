@@ -1,0 +1,16 @@
+const express = require("express");
+const {
+  registerStudent,
+  getMatchedJobs
+} = require("../controllers/StudentController");
+
+const router = express.Router();
+
+console.log("StudentRoutes loaded");
+
+router.post("/register", registerStudent);
+router.get("/:id/jobs", getMatchedJobs);
+
+console.log("Student routes configured: POST /register, GET /:id/jobs");
+
+module.exports = router;
