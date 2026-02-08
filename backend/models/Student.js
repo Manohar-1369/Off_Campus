@@ -10,6 +10,10 @@ const studentSchema = new mongoose.Schema({
   domain: {
     type: String,
     required: true
+  },
+  notify: {
+    type: Boolean,
+    default: true
   }
 });
 

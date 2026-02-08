@@ -8,15 +8,13 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-exports.sendJobAlert = async (studentEmail, job) => {
+exports.sendJobAlert = async (to, job) => {
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
-    to: studentEmail,
+    to,
     subject: `New ${job.domain} Opportunity`,
     text: `
-Hi,
-
-A new ${job.domain} opportunity matches your interest.
+New opportunity that matches your interest!
 
 Title: ${job.title}
 Company: ${job.company}

@@ -5,11 +5,13 @@ require("dotenv").config();
 
 const jobRoutes = require("./routes/jobRoutes");
 const studentRoutes = require("./routes/StudentRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
 
 // Log all incoming requests
 app.use((req, res, next) => {
@@ -30,8 +32,9 @@ app.get("/", (req, res) => {
 
 app.use("/jobs", jobRoutes);
 app.use("/students", studentRoutes);
+app.use("/notifications", notificationRoutes);
 
-console.log("Routes registered: /jobs and /students");
+console.log("Routes registered: /jobs, /students, and /notifications");
 
 const PORT = process.env.PORT || 5000;
 

@@ -7,6 +7,7 @@
 # Dependencies
 node_modules/
 package-lock.json
+yarn.lock
 
 # Logs
 *.log
@@ -26,3 +27,9 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Build outputs
+dist/
+build/
+*.pyc
+__pycache__/
