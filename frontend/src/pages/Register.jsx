@@ -6,7 +6,8 @@ function Register({ setStudentId }) {
   const [domain, setDomain] = useState("AI/ML");
 
   const registerStudent = async () => {
-    const res = await fetch("http://localhost:5000/students/register", {
+    const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+    const res = await fetch(`${apiBase}/students/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, domain })

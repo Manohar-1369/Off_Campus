@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const apiBase = "http://localhost:5000";
+const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 function Signup({ onAuth, onSwitch }) {
   const [name, setName] = useState("");

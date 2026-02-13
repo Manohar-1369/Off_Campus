@@ -24,18 +24,19 @@ export default function ResumeAnalyzer({ studentId, onResumeSaved, initialSkills
 
     try {
       let res;
+      const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
       if (file) {
         const formData = new FormData();
         formData.append("resume", file);
         formData.append("studentId", studentId || "");
         res = await axios.post(
-          "http://localhost:5000/api/resume/analyze",
+          `${apiBase}/api/resume/analyze`,
           formData,
           { headers: { "Content-Type": "multipart/form-data" } }
         );
       } else {
         res = await axios.post(
-          "http://localhost:5000/api/resume/analyze",
+          `${apiBase}/api/resume/analyze`,
           { resumeText: text, studentId },
           { headers: { "Content-Type": "application/json" } }
         );
@@ -66,8 +67,9 @@ export default function ResumeAnalyzer({ studentId, onResumeSaved, initialSkills
 
     setAnalyzing(true);
     try {
+      const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
       const res = await axios.post(
-        "http://localhost:5000/api/resume/detailed-analysis",
+        `${apiBase}/api/resume/detailed-analysis`,
         { studentId },
         { headers: { "Content-Type": "application/json" } }
       );

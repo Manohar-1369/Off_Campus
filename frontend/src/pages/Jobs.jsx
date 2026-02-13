@@ -27,7 +27,8 @@ function Jobs({ studentId, resumeSkills = [] }) {
       try {
         if (hasSkills) {
           console.log("📊 Fetching matched jobs with skills:", resumeSkills);
-          const res = await fetch("http://localhost:5000/api/jobs/match", {
+          const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+          const res = await fetch(`${apiBase}/api/jobs/match`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ skills: resumeSkills })
@@ -37,7 +38,8 @@ function Jobs({ studentId, resumeSkills = [] }) {
           setJobs(Array.isArray(data) ? data : []);
         } else {
           console.log("🏢 Fetching domain-based jobs for student:", studentId);
-          const res = await fetch(`http://localhost:5000/students/${studentId}/jobs`);
+          const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+          const res = await fetch(`${apiBase}/students/${studentId}/jobs`);
           const data = await res.json();
           console.log("✅ Domain jobs received:", data);
           setJobs(Array.isArray(data) ? data : []);
@@ -57,8 +59,9 @@ function Jobs({ studentId, resumeSkills = [] }) {
   // Fetch notification status
   useEffect(() => {
     if (!studentId) return;
+    const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
     
-    fetch(`http://localhost:5000/notifications/status/${studentId}`)
+    fetch(`${apiBase}/notifications/status/${studentId}`)
       .then((res) => res.json())
       .then((data) => setNotifyEnabled(data.notify))
       .catch((err) => console.error("Error fetching notification status:", err));
@@ -72,7 +75,8 @@ function Jobs({ studentId, resumeSkills = [] }) {
     
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/notifications/enable", {
+      const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+      const response = await fetch(`${apiBase}/notifications/enable`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId })
@@ -106,7 +110,8 @@ function Jobs({ studentId, resumeSkills = [] }) {
     
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/notifications/disable", {
+      const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+      const response = await fetch(`${apiBase}/notifications/disable`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId })
