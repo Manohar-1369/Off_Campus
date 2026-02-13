@@ -54,7 +54,9 @@ OffCampus/
 │   ├── src/
 │   │   ├── pages/
 │   │   │   ├── Jobs.jsx
-│   │   │   └── Register.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── Signup.jsx
+│   │   │   └── ResumeAnalyzer.jsx
 │   │   ├── App.jsx
 │   │   └── main.jsx
 │   ├── package.json
@@ -113,6 +115,7 @@ PORT=5000
 MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/offcampus
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-gmail-app-password
+GEMINI_API_KEY=your-gemini-api-key
 ```
 
 ## 💡 How It Works
@@ -132,8 +135,17 @@ EMAIL_PASS=your-gmail-app-password
 - `POST /students/register` - Register new student
 - `GET /students/:id/jobs` - Get matched jobs for student
 
+### Auth
+- `POST /auth/register` - Register account
+- `POST /auth/login` - Login
+
 ### Jobs
-- `GET /jobs` - Get all jobs
+- `GET /api/jobs` - Get all jobs
+- `POST /api/jobs/match` - Match jobs by skills
+
+### Resume
+- `POST /api/resume/upload` - Upload resume
+- `GET /api/resume/:studentId` - Get resume details
 
 ### Notifications
 - `POST /notifications/enable` - Enable notifications + send test email
