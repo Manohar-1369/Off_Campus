@@ -7,6 +7,8 @@ function Jobs({ studentId }) {
 
   // Fetch jobs
   useEffect(() => {
+    if (!studentId) return;
+    
     fetch(`http://localhost:5000/students/${studentId}/jobs`)
       .then((res) => res.json())
       .then((data) => setJobs(data))
@@ -15,6 +17,8 @@ function Jobs({ studentId }) {
 
   // Fetch notification status
   useEffect(() => {
+    if (!studentId) return;
+    
     fetch(`http://localhost:5000/notifications/status/${studentId}`)
       .then((res) => res.json())
       .then((data) => setNotifyEnabled(data.notify))
@@ -22,6 +26,11 @@ function Jobs({ studentId }) {
   }, [studentId]);
 
   const handleEnableNotifications = async () => {
+    if (!studentId) {
+      alert("Student ID is missing. Please register first.");
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await fetch("http://localhost:5000/notifications/enable", {
@@ -34,7 +43,7 @@ function Jobs({ studentId }) {
 
       if (response.ok) {
         setNotifyEnabled(true);
-        alert("Notifications enabled. Test email sent.");
+        alert("Notifications enabled successfully!");
       } else {
         alert("Failed to enable notifications: " + data.message);
       }
@@ -47,6 +56,11 @@ function Jobs({ studentId }) {
   };
 
   const handleDisableNotifications = async () => {
+    if (!studentId) {
+      alert("Student ID is missing. Please register first.");
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await fetch("http://localhost:5000/notifications/disable", {

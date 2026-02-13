@@ -1,6 +1,6 @@
-const express = require("express");
-const Student = require("../models/Student");
-const { sendJobAlert } = require("../utils/mailer");
+import express from "express";
+import Student from "../models/Student.js";
+import { sendJobAlert } from "../utils/mailer.js";
 
 const router = express.Router();
 
@@ -23,7 +23,7 @@ router.post("/enable", async (req, res) => {
     student.notify = true;
     await student.save();
 
-    // Send test email
+    // Try to send test email (non-blocking)
     const testJob = {
       title: "Test Notification",
       company: "OffCampus System",
@@ -31,11 +31,18 @@ router.post("/enable", async (req, res) => {
       applyLink: "https://example.com"
     };
 
-    await sendJobAlert(student.email, testJob);
+    const emailSent = await sendJobAlert(student.email, testJob);
+    
+    if (emailSent) {
+      console.log("✅ Notification enabled with test email sent");
+    } else {
+      console.log("⚠️ Notification enabled but email could not be sent");
+    }
 
     res.json({ 
       message: "Notifications enabled successfully", 
-      notify: true 
+      notify: true,
+      emailSent: emailSent
     });
   } catch (error) {
     console.error("Error enabling notifications:", error);
@@ -99,4 +106,4 @@ router.get("/status/:studentId", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,7 +1,7 @@
-const Student = require("../models/Student");
-const Job = require("../models/Job");
+import Student from "../models/Student.js";
+import Job from "../models/Job.js";
 
-exports.registerStudent = async (req, res) => {
+export const registerStudent = async (req, res) => {
   console.log("registerStudent called with body:", req.body);
   const { name, email, domain } = req.body;
 
@@ -14,7 +14,7 @@ exports.registerStudent = async (req, res) => {
   res.json(student);
 };
 
-exports.getMatchedJobs = async (req, res) => {
+export const getMatchedJobs = async (req, res) => {
   const student = await Student.findById(req.params.id);
   if (!student) return res.status(404).json({ msg: "Student not found" });
 

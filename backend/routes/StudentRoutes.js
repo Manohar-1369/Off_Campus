@@ -1,8 +1,8 @@
-const express = require("express");
-const {
+import express from "express";
+import {
   registerStudent,
   getMatchedJobs
-} = require("../controllers/StudentController");
+} from "../controllers/StudentController.js";
 
 const router = express.Router();
 
@@ -13,4 +13,4 @@ router.get("/:id/jobs", getMatchedJobs);
 
 console.log("Student routes configured: POST /register, GET /:id/jobs");
 
-module.exports = router;
+export default router;
