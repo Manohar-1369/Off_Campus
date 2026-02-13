@@ -42,6 +42,20 @@ router.post("/match", async (req, res) => {
     // If no tech skills found, use all skills from resume
     const skillsToMatch = filteredSkills.length > 0 ? filteredSkills : skills;
 
+    // If user has NO skills at all, return all jobs with 0% match
+    if (skillsToMatch.length === 0) {
+      const jobs = await Job.find();
+      const results = jobs.map(job => ({
+        id: job._id,
+        title: job.title,
+        company: job.company,
+        domain: job.domain,
+        applyLink: job.applyLink,
+        score: 0
+      })).sort((a, b) => b.score - a.score);
+      return res.json(results);
+    }
+
     const jobs = await Job.find();
 
    const results = jobs.map(job => {
@@ -73,31 +87,6 @@ router.post("/match", async (req, res) => {
     if (text.includes(skill.toLowerCase()))
       matchCount++;
   });
-
-  // Backend role mapping
-  if (text.includes("backend") &&
-      (skillsToMatch.includes("node") ||
-       skillsToMatch.includes("javascript") ||
-       skillsToMatch.includes("express")))
-    matchCount += 2;
-
-  // Full stack mapping
-  if (text.includes("full") &&
-      (skillsToMatch.includes("react") &&
-       skillsToMatch.includes("node")))
-    matchCount += 2;
-
-  // Software engineer mapping
-  if (text.includes("software") &&
-      (skillsToMatch.includes("c++") ||
-       skillsToMatch.includes("javascript") ||
-       skillsToMatch.includes("java")))
-    matchCount += 2;
-
-  // DevOps mapping
-  if (text.includes("devops") &&
-      skillsToMatch.includes("node"))
-    matchCount += 1;
 
   const score = job.skills && job.skills.length > 0 
     ? Math.min(Math.round((matchCount / job.skills.length) * 100), 100)

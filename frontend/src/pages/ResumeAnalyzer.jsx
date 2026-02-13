@@ -1,140 +1,230 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
-export default function ResumeAnalyzer() {
+export default function ResumeAnalyzer({ studentId, onResumeSaved, initialSkills = [], initialHasResume = false }) {
   const [file, setFile] = useState(null);
+  const [text, setText] = useState("");
   const [result, setResult] = useState(null);
+  const [detailedAnalysis, setDetailedAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [jobs, setJobs] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
-  const handleUpload = async () => {
-    if (!file) return alert("Upload resume");
+  useEffect(() => {
+    if (initialHasResume) {
+      setIsSaved(true);
+      setResult({ skills: initialSkills });
+    }
+  }, [initialHasResume, initialSkills]);
 
-    const formData = new FormData();
-    formData.append("resume", file);
+  const handleSave = async () => {
+    if (!file && !text.trim()) return alert("Upload resume or paste text");
 
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/resume/analyze",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+      let res;
+      if (file) {
+        const formData = new FormData();
+        formData.append("resume", file);
+        formData.append("studentId", studentId || "");
+        res = await axios.post(
+          "http://localhost:5000/api/resume/analyze",
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+      } else {
+        res = await axios.post(
+          "http://localhost:5000/api/resume/analyze",
+          { resumeText: text, studentId },
+          { headers: { "Content-Type": "application/json" } }
+        );
+      }
 
       setResult(res.data);
+      setIsSaved(true);
+      console.log("📄 Resume saved:", res.data);
+      console.log("🎯 Extracted skills:", res.data.skills);
+      
+      if (onResumeSaved) {
+        const skills = res.data.skills || [];
+        console.log("📤 Sending skills to parent:", skills);
+        onResumeSaved(skills);
+      }
     } catch (err) {
       console.error(err);
-      alert("Resume analysis failed");
+      alert("Resume save failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const matchJobs = async () => {
+  const handleAnalyze = async () => {
+    if (!isSaved) {
+      return alert("Please save your resume first");
+    }
+
+    setAnalyzing(true);
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/jobs/match",
-        { skills: result.skills }
+        "http://localhost:5000/api/resume/detailed-analysis",
+        { studentId },
+        { headers: { "Content-Type": "application/json" } }
       );
-      setJobs(res.data);
+      setDetailedAnalysis(res.data);
+      console.log("📊 Detailed analysis:", res.data);
     } catch (err) {
       console.error(err);
-      alert("Job matching failed");
+      alert("Analysis failed");
+    } finally {
+      setAnalyzing(false);
     }
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h2>🚀 AI Resume Analyzer</h2>
+    <div className="resume-block">
+      <div className="panel-header">
+        <div>
+          <h2>Upload Resume</h2>
+          <p className="panel-subtext">Optional. If uploaded, matching improves.</p>
+        </div>
+      </div>
 
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+      <div className="resume-inputs">
+        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
 
-      <br /><br />
+        <textarea
+          rows="6"
+          placeholder="Or paste your resume text here"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+      </div>
 
-      <button onClick={handleUpload}>Analyze Resume</button>
+      <div className="resume-actions">
+        <button className="primary-btn" onClick={handleSave} disabled={loading}>
+          {loading ? "⏳ Saving..." : isSaved ? "Update Resume" : "Save Resume"}
+        </button>
+        <button 
+          className="secondary-btn" 
+          onClick={handleAnalyze} 
+          disabled={!isSaved || analyzing}
+        >
+          {analyzing ? "🤖 Analyzing with AI..." : "Get Detailed Analysis"}
+        </button>
+      </div>
 
-      {loading && <p>Analyzing...</p>}
+      {analyzing && (
+        <div className="loading-message">
+          <div className="spinner"></div>
+          <p>🔍 Analyzing your resume against {detailedAnalysis?.jobAnalysis?.length || '20+'} jobs...</p>
+          <p className="loading-subtext">Generating personalized roadmap with AI (this may take 15-30 seconds)</p>
+        </div>
+      )}
 
-      {result && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>📊 Score: {result.score}/100</h3>
+      {isSaved && result && (
+        <div className="resume-results">
+          <div className="result-row">
+            <span>✅ Resume Saved</span>
+            <strong>{result.skills?.length || 0} skills detected</strong>
+          </div>
+        </div>
+      )}
 
-          <h4>💡 Skills</h4>
-          <ul>
-            {result.skills.map((s,i)=>(
-              <li key={i}>{s}</li>
-            ))}
-          </ul>
+      {detailedAnalysis && (
+        <div className="detailed-analysis">
+          <h3>📊 Detailed Job Analysis</h3>
+          
+          <div className="analysis-summary">
+            <div className="summary-card">
+              <span>Your Skills</span>
+              <strong>{detailedAnalysis.userSkills?.length || 0}</strong>
+            </div>
+            <div className="summary-card">
+              <span>Jobs Analyzed</span>
+              <strong>{detailedAnalysis.jobAnalysis?.length || 0}</strong>
+            </div>
+            <div className="summary-card">
+              <span>Best Match</span>
+              <strong>{detailedAnalysis.bestMatch?.score || 0}%</strong>
+            </div>
+          </div>
 
-          <h4>🔥 Strengths</h4>
-          <ul>
-            {result.strengths.map((s,i)=>(
-              <li key={i}>{s}</li>
-            ))}
-          </ul>
-
-          <h4>⚠️ Weaknesses</h4>
-          <ul>
-            {result.weaknesses.map((s,i)=>(
-              <li key={i}>{s}</li>
-            ))}
-          </ul>
-
-          <h4>🎯 Suggested Roles</h4>
-          <ul>
-            {result.suggested_roles.map((s,i)=>(
-              <li key={i}>{s}</li>
-            ))}
-          </ul>
-
-          <br />
-
-          <button onClick={matchJobs}>
-            🔍 Match Jobs For Me
-          </button>
-
-          {/* ================= MATCHED JOBS ================= */}
-
-          {jobs && jobs.length > 0 && (
-            <div style={{ marginTop: "20px" }}>
-              
-              {/* BEST MATCH */}
-              <h2 style={{ color: "green" }}>
-                ⭐ Best Match: {jobs[0].title}
-              </h2>
-
-              <h3>💼 Matched Jobs</h3>
-
-              {jobs.map((job,i)=>(
-                <div key={i} style={{
-                  border: "1px solid #ccc",
-                  padding: "12px",
-                  marginBottom: "12px",
-                  borderRadius: "8px"
-                }}>
+          <div className="job-analysis-list">
+            {detailedAnalysis.jobAnalysis?.map((job, idx) => (
+              <div key={idx} className="job-analysis-card">
+                <div className="job-header">
                   <h4>{job.title}</h4>
+                  <span className={`score-badge ${job.score >= 70 ? 'high' : job.score >= 40 ? 'medium' : 'low'}`}>
+                    {job.score}%
+                  </span>
+                </div>
+                <p className="job-company">{job.company} • {job.domain}</p>
+                
+                {job.missingSkills?.length > 0 && (
+                  <div className="missing-skills">
+                    <h5>Missing Skills:</h5>
+                    <div className="skill-tags">
+                      {job.missingSkills.map((skill, i) => (
+                        <span key={i} className="skill-tag">{skill}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <a href={job.applyLink} target="_blank" rel="noreferrer" className="apply-link">
+                  Apply →
+                </a>
+              </div>
+            ))}
+          </div>
 
-                  <p><b>Company:</b> {job.company}</p>
-                  <p><b>Domain:</b> {job.domain}</p>
-
-                  <p>
-                    <b>Match Score:</b> 
-                    <span style={{
-                      color:
-                        job.score > 60 ? "green" :
-                        job.score > 30 ? "orange" : "red",
-                      fontWeight: "bold"
-                    }}>
-                      {" "}{job.score}%
-                    </span>
-                  </p>
-
-                  <a href={job.applyLink} target="_blank">
-                    Apply Now
-                  </a>
+          {detailedAnalysis.learningRoadmap && (
+            <div className="learning-roadmap">
+              <h3>🎯 Learning Roadmap</h3>
+              {detailedAnalysis.learningRoadmap.intro && detailedAnalysis.learningRoadmap.intro.includes('⚠️') && (
+                <div className="quota-warning">
+                  ⚠️ AI quota exceeded today. Showing curated roadmap instead.
+                </div>
+              )}
+              <p className="roadmap-intro">{detailedAnalysis.learningRoadmap.intro}</p>
+              
+              {detailedAnalysis.learningRoadmap.skills?.map((skill, idx) => (
+                <div key={idx} className="roadmap-skill">
+                  <div className="skill-header">
+                    <h4>{skill.name}</h4>
+                    <span className="priority-badge">{skill.priority}</span>
+                  </div>
+                  <p>{skill.reason}</p>
+                  <div className="resources">
+                    <h5>Resources:</h5>
+                    <ul>
+                      {skill.resources?.map((resource, i) => (
+                        <li key={i}>{resource}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <p className="timeline">⏱️ {skill.timeline}</p>
+                  
+                  {skill.projects && skill.projects.length > 0 && (
+                    <div className="projects">
+                      <h5>Practice Projects:</h5>
+                      <ul>
+                        {skill.projects.map((project, i) => (
+                          <li key={i}>{project}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               ))}
+              
+              {detailedAnalysis.learningRoadmap.careerAdvice && (
+                <div className="career-advice">
+                  <h4>💼 Career Advice</h4>
+                  <p>{detailedAnalysis.learningRoadmap.careerAdvice}</p>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -1,19 +1,58 @@
 import { useEffect, useState } from "react";
 
-function Jobs({ studentId }) {
+function Jobs({ studentId, resumeSkills = [] }) {
   const [jobs, setJobs] = useState([]);
   const [notifyEnabled, setNotifyEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [jobsError, setJobsError] = useState("");
 
   // Fetch jobs
   useEffect(() => {
     if (!studentId) return;
-    
-    fetch(`http://localhost:5000/students/${studentId}/jobs`)
-      .then((res) => res.json())
-      .then((data) => setJobs(data))
-      .catch((err) => console.error("Error fetching jobs:", err));
-  }, [studentId]);
+
+    const hasSkills = Array.isArray(resumeSkills) && resumeSkills.length > 0;
+
+    console.log("🔍 Jobs effect triggered:", { 
+      studentId, 
+      hasSkills, 
+      skillCount: resumeSkills.length,
+      skills: resumeSkills 
+    });
+
+    setJobsLoading(true);
+    setJobsError("");
+
+    const fetchJobs = async () => {
+      try {
+        if (hasSkills) {
+          console.log("📊 Fetching matched jobs with skills:", resumeSkills);
+          const res = await fetch("http://localhost:5000/api/jobs/match", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ skills: resumeSkills })
+          });
+          const data = await res.json();
+          console.log("✅ Matched jobs received:", data);
+          setJobs(Array.isArray(data) ? data : []);
+        } else {
+          console.log("🏢 Fetching domain-based jobs for student:", studentId);
+          const res = await fetch(`http://localhost:5000/students/${studentId}/jobs`);
+          const data = await res.json();
+          console.log("✅ Domain jobs received:", data);
+          setJobs(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Error fetching jobs:", err);
+        setJobs([]);
+        setJobsError("Unable to load jobs right now.");
+      } finally {
+        setJobsLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, [studentId, resumeSkills]);
 
   // Fetch notification status
   useEffect(() => {
@@ -43,7 +82,11 @@ function Jobs({ studentId }) {
 
       if (response.ok) {
         setNotifyEnabled(true);
-        alert("Notifications enabled successfully!");
+        alert(
+          data.emailSent 
+            ? "✅ Notifications enabled! A test email has been sent to your inbox."
+            : "✅ Notifications enabled! (Email delivery failed - check your settings)"
+        );
       } else {
         alert("Failed to enable notifications: " + data.message);
       }
@@ -86,103 +129,64 @@ function Jobs({ studentId }) {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      {/* Notification Section */}
-      <div
-        style={{
-          border: "2px solid #4CAF50",
-          borderRadius: "8px",
-          padding: "20px",
-          marginBottom: "30px",
-          backgroundColor: "#f9f9f9"
-        }}
-      >
-        <h3 style={{ marginTop: 0, color: "#333" }}>📧 Email Notifications</h3>
-        <p style={{ color: "#666", marginBottom: "15px" }}>
-          Enable notifications to receive email alerts when new matching opportunities are discovered.
-          <br />
-          <small style={{ color: "#999" }}>
-            The system automatically crawls and matches jobs to your domain. Notifications are sent only for new opportunities.
-          </small>
-        </p>
-        <button
-          onClick={notifyEnabled ? handleDisableNotifications : handleEnableNotifications}
-          disabled={loading}
-          style={{
-            padding: "10px 20px",
-            fontSize: "16px",
-            fontWeight: "bold",
-            color: "white",
-            backgroundColor: notifyEnabled ? "#f44336" : "#4CAF50",
-            border: "none",
-            borderRadius: "5px",
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.6 : 1
-          }}
-        >
-          {loading
-            ? "Processing..."
-            : notifyEnabled
-            ? "🔕 Disable Notifications"
-            : "🔔 Enable Notifications"}
-        </button>
-        <span
-          style={{
-            marginLeft: "15px",
-            fontWeight: "bold",
-            color: notifyEnabled ? "#4CAF50" : "#999"
-          }}
-        >
-          Status: {notifyEnabled ? "Enabled ✓" : "Disabled"}
-        </span>
+    <section className="panel jobs-panel">
+      <div className="panel-header">
+        <div>
+          <h2>Jobs Matched</h2>
+          <p className="panel-subtext">
+            Automatically shows jobs from your domain or resume skills.
+          </p>
+        </div>
+
+        <div className="notify-toggle">
+          <span className={`notify-pill ${notifyEnabled ? "on" : "off"}`}>
+            {notifyEnabled ? "Notifications On" : "Notifications Off"}
+          </span>
+          <button
+            className={notifyEnabled ? "danger-btn" : "success-btn"}
+            onClick={notifyEnabled ? handleDisableNotifications : handleEnableNotifications}
+            disabled={loading}
+          >
+            {loading
+              ? "Processing..."
+              : notifyEnabled
+              ? "Disable"
+              : "Enable"}
+          </button>
+        </div>
       </div>
 
-      {/* Jobs Section */}
-      <h3>Matched Opportunities</h3>
-
-      {jobs.length === 0 ? (
-        <p>No matching jobs found.</p>
+      {jobsLoading ? (
+        <p className="empty-state">Loading jobs...</p>
+      ) : jobsError ? (
+        <p className="empty-state">{jobsError}</p>
+      ) : jobs.length === 0 ? (
+        <p className="empty-state">Upload resume to see matched jobs.</p>
       ) : (
-        jobs.map((job) => (
-          <div
-            key={job._id}
-            style={{
-              border: "1px solid #ccc",
-              borderRadius: "5px",
-              margin: "10px 0",
-              padding: "15px",
-              backgroundColor: "white"
-            }}
-          >
-            <h4 style={{ marginTop: 0, color: "#333" }}>{job.title}</h4>
-            <p style={{ margin: "5px 0" }}>
-              <b>Domain:</b> {job.domain}
-            </p>
-            {job.company && (
-              <p style={{ margin: "5px 0" }}>
-                <b>Company:</b> {job.company}
-              </p>
-            )}
-            <a
-              href={job.applyLink}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: "inline-block",
-                marginTop: "10px",
-                padding: "8px 16px",
-                backgroundColor: "#2196F3",
-                color: "white",
-                textDecoration: "none",
-                borderRadius: "4px"
-              }}
-            >
-              Apply Here →
-            </a>
-          </div>
-        ))
+        <div className="jobs-grid">
+          {jobs.map((job, index) => (
+            <article key={job._id || job.id || index} className="job-card">
+              <div className="job-card-header">
+                <h4>{job.title}</h4>
+                {typeof job.score === "number" && (
+                  <span className="score-chip">{job.score}%</span>
+                )}
+              </div>
+              <p className="job-meta">Domain: {job.domain}</p>
+              {job.company && <p className="job-meta">Company: {job.company}</p>}
+              <a
+                href={job.applyLink}
+                target="_blank"
+                rel="noreferrer"
+                className="apply-btn"
+              >
+                Apply Here
+              </a>
+            </article>
+          ))}
+        </div>
       )}
-    </div>
+    </section>
   );
 }
 

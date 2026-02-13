@@ -19,5 +19,11 @@ export const getMatchedJobs = async (req, res) => {
   if (!student) return res.status(404).json({ msg: "Student not found" });
 
   const jobs = await Job.find({ domain: student.domain });
-  res.json(jobs);
+  if (jobs.length > 0) {
+    return res.json(jobs);
+  }
+
+  // Fallback: show all jobs if domain has no matches
+  const allJobs = await Job.find();
+  return res.json(allJobs);
 };

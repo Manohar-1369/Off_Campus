@@ -6,6 +6,7 @@ import resumeRoutes from "./routes/resumeRoutes.js";
 import studentRoutes from "./routes/StudentRoutes.js";
 import jobRoutes from "./routes/jobRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
@@ -13,7 +14,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+app.use("/auth", authRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/students", studentRoutes);
 app.use("/api/jobs", jobRoutes);
